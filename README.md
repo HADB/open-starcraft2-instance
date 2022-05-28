@@ -1,7 +1,7 @@
 # open-starcraft2-instance
-星际2一键多开工具
+星际2一键双开甚至多开的工具
 
-一键多开星际2，原理参考：https://ngabbs.com/read.php?tid=14958561&rand=997
+一键双开/多开星际2，原理参考：https://ngabbs.com/read.php?tid=14958561&rand=997
 
 手动从 ProcessExplorer 中寻找 Handle 并关闭比较麻烦，所以做了这样一个自动工具。
 
