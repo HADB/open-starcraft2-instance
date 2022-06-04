@@ -5,6 +5,8 @@
 
 手动从 ProcessExplorer 中寻找 Handle 并关闭比较麻烦，所以做了这样一个自动工具。
 
+下载地址：https://github.com/HADB/open-starcraft2-instance/releases/download/1.1.0/OpenStarcraft2Instance-release-1.1.0.zip
+
 参考项目：
 
 https://stackoverflow.com/questions/6808831/delete-a-mutex-from-another-process （遍历速度很慢，效率低，后面没有采用）
