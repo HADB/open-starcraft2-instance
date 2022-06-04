@@ -40,46 +40,27 @@ namespace OpenStarcraft2Instance
 
         private void openInstanceButton_Click(object sender, EventArgs e)
         {
-            var scProcesses = Process.GetProcessesByName("SC2_x64");
-            if (scProcesses.Length == 0)
+            if (string.IsNullOrEmpty(gameFolderTextBox.Text))
             {
-                Process.Start(Path.Combine(ConfigurationManager.AppSettings["GameFolderPath"], @"Support64\SC2Switcher_x64.exe"));
+                MessageBox.Show("请选择星际2安装目录", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             else
             {
-                openInstanceButton.Text = "正在等待句柄结束...";
-                openInstanceButton.Enabled = false;
-                Task.Run(() =>
+                var scProcesses = Process.GetProcessesByName("SC2_x64");
+                if (scProcesses.Length == 0)
                 {
-                    var handlesToClose = new List<HandleInfo>();
-                    handlesToClose.Add(new HandleInfo { Type = SystemHandleType.OB_TYPE_EVENT, Name = @"\Sessions\1\BaseNamedObjects\StarCraft II Game Application" });
-                    handlesToClose.Add(new HandleInfo { Type = SystemHandleType.OB_TYPE_SECTION, Name = @"\Sessions\1\BaseNamedObjects\StarCraft II IPC Mem" });
-
-                    using (var handles = HandleHelpers.GetEnumerator(scProcesses[0].Id))
+                    Process.Start(Path.Combine(ConfigurationManager.AppSettings["GameFolderPath"], @"Support64\SC2Switcher_x64.exe"));
+                }
+                else
+                {
+                    openInstanceButton.Text = "正在等待句柄结束...";
+                    openInstanceButton.Enabled = false;
+                    Task.Run(() =>
                     {
-                        while (handles.MoveNext())
-                        {
-                            foreach (var handle in handlesToClose)
-                            {
-                                if (handles.Current.Type == handle.Type && handles.Current.Name == handle.Name)
-                                {
-                                    Console.WriteLine("Handle detected: {0}, {1}", handles.Current.Type, handles.Current.Name);
-                                    HandleHelpers.DuplicateCloseHandle(scProcesses[0].Handle, handles.Current.Handle);
-                                }
-                            }
-                        }
-                    }
+                        var handlesToClose = new List<HandleInfo>();
+                        handlesToClose.Add(new HandleInfo { Type = SystemHandleType.OB_TYPE_EVENT, Name = @"\Sessions\1\BaseNamedObjects\StarCraft II Game Application" });
+                        handlesToClose.Add(new HandleInfo { Type = SystemHandleType.OB_TYPE_SECTION, Name = @"\Sessions\1\BaseNamedObjects\StarCraft II IPC Mem" });
 
-                    var ready = true;
-                    for (var i = 1; i < 10; i++)
-                    {
-                        openInstanceButton.BeginInvoke(new Action(() =>
-                        {
-                            openInstanceButton.Text = $"正在等待句柄结束({i})...";
-                        }));
-
-                        Thread.Sleep(1000);
-                        ready = true;
                         using (var handles = HandleHelpers.GetEnumerator(scProcesses[0].Id))
                         {
                             while (handles.MoveNext())
@@ -88,28 +69,54 @@ namespace OpenStarcraft2Instance
                                 {
                                     if (handles.Current.Type == handle.Type && handles.Current.Name == handle.Name)
                                     {
-                                        ready = false;
+                                        Console.WriteLine("Handle detected: {0}, {1}", handles.Current.Type, handles.Current.Name);
+                                        HandleHelpers.DuplicateCloseHandle(scProcesses[0].Handle, handles.Current.Handle);
                                     }
                                 }
                             }
                         }
 
-                        if (ready)
+                        var ready = true;
+                        for (var i = 1; i < 10; i++)
                         {
-                            Process.Start(Path.Combine(ConfigurationManager.AppSettings["GameFolderPath"], @"Support64\SC2Switcher_x64.exe"));
                             openInstanceButton.BeginInvoke(new Action(() =>
                             {
-                                openInstanceButton.Text = "一键多开";
-                                openInstanceButton.Enabled = true;
+                                openInstanceButton.Text = $"正在等待句柄结束({i})...";
                             }));
-                            break;
+
+                            Thread.Sleep(1000);
+                            ready = true;
+                            using (var handles = HandleHelpers.GetEnumerator(scProcesses[0].Id))
+                            {
+                                while (handles.MoveNext())
+                                {
+                                    foreach (var handle in handlesToClose)
+                                    {
+                                        if (handles.Current.Type == handle.Type && handles.Current.Name == handle.Name)
+                                        {
+                                            ready = false;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (ready)
+                            {
+                                Process.Start(Path.Combine(ConfigurationManager.AppSettings["GameFolderPath"], @"Support64\SC2Switcher_x64.exe"));
+                                openInstanceButton.BeginInvoke(new Action(() =>
+                                {
+                                    openInstanceButton.Text = "一键多开";
+                                    openInstanceButton.Enabled = true;
+                                }));
+                                break;
+                            }
                         }
-                    }
-                    if (!ready)
-                    {
-                        MessageBox.Show("检测到句柄未关闭，请尝试重试", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
-                });
+                        if (!ready)
+                        {
+                            MessageBox.Show("检测到句柄未关闭，请尝试重试", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                    });
+                }
             }
         }
 

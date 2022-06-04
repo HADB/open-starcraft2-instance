@@ -50,6 +50,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.gameFolderTextBox.Location = new System.Drawing.Point(243, 59);
             this.gameFolderTextBox.Name = "gameFolderTextBox";
+            this.gameFolderTextBox.ReadOnly = true;
             this.gameFolderTextBox.Size = new System.Drawing.Size(523, 39);
             this.gameFolderTextBox.TabIndex = 1;
             // 
