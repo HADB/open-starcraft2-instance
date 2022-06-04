@@ -39,7 +39,6 @@ namespace OpenStarcraft2Instance
 
         private void openInstanceButton_Click(object sender, EventArgs e)
         {
-            openInstanceButton.Text = "请等待 5 秒左右...";
             var scProcesses = Process.GetProcessesByName("SC2_x64");
             if (scProcesses.Length == 0)
             {
@@ -47,6 +46,8 @@ namespace OpenStarcraft2Instance
             }
             else
             {
+                openInstanceButton.Text = "正在等待句柄结束...";
+                openInstanceButton.Enabled = false;
                 Task.Run(() =>
                 {
                     var handlesToClose = new List<HandleInfo>();
@@ -68,14 +69,41 @@ namespace OpenStarcraft2Instance
                         }
                     }
 
-                    Task.Delay(5000).ContinueWith(_ =>
+                    var ready = true;
+                    for (var i = 0; i < 10; i++)
                     {
-                        Process.Start(Path.Combine(ConfigurationManager.AppSettings["GameFolderPath"], @"Support64\SC2Switcher_x64.exe"));
-                        openInstanceButton.BeginInvoke(new Action(() =>
+                        Task.Delay(1000).ContinueWith(_ =>
                         {
-                            openInstanceButton.Text = "一键多开";
-                        }));
-                    });
+                            ready = true;
+                            using (var handles = HandleHelpers.GetEnumerator(scProcesses[0].Id))
+                            {
+                                while (handles.MoveNext())
+                                {
+                                    foreach (var handle in handlesToClose)
+                                    {
+                                        if (handles.Current.Type == handle.Type && handles.Current.Name == handle.Name)
+                                        {
+                                            ready = false;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (ready)
+                            {
+                                Process.Start(Path.Combine(ConfigurationManager.AppSettings["GameFolderPath"], @"Support64\SC2Switcher_x64.exe"));
+                                openInstanceButton.BeginInvoke(new Action(() =>
+                                {
+                                    openInstanceButton.Text = "一键多开";
+                                    openInstanceButton.Enabled = true;
+                                }));
+                            }
+                        });
+                    }
+                    if (!ready)
+                    {
+                        MessageBox.Show("检测到句柄未关闭，请尝试重试", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
                 });
             }
         }
