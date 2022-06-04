@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -70,35 +71,39 @@ namespace OpenStarcraft2Instance
                     }
 
                     var ready = true;
-                    for (var i = 0; i < 10; i++)
+                    for (var i = 1; i < 10; i++)
                     {
-                        Task.Delay(1000).ContinueWith(_ =>
+                        openInstanceButton.BeginInvoke(new Action(() =>
                         {
-                            ready = true;
-                            using (var handles = HandleHelpers.GetEnumerator(scProcesses[0].Id))
+                            openInstanceButton.Text = $"正在等待句柄结束({i})...";
+                        }));
+
+                        Thread.Sleep(1000);
+                        ready = true;
+                        using (var handles = HandleHelpers.GetEnumerator(scProcesses[0].Id))
+                        {
+                            while (handles.MoveNext())
                             {
-                                while (handles.MoveNext())
+                                foreach (var handle in handlesToClose)
                                 {
-                                    foreach (var handle in handlesToClose)
+                                    if (handles.Current.Type == handle.Type && handles.Current.Name == handle.Name)
                                     {
-                                        if (handles.Current.Type == handle.Type && handles.Current.Name == handle.Name)
-                                        {
-                                            ready = false;
-                                        }
+                                        ready = false;
                                     }
                                 }
                             }
+                        }
 
-                            if (ready)
+                        if (ready)
+                        {
+                            Process.Start(Path.Combine(ConfigurationManager.AppSettings["GameFolderPath"], @"Support64\SC2Switcher_x64.exe"));
+                            openInstanceButton.BeginInvoke(new Action(() =>
                             {
-                                Process.Start(Path.Combine(ConfigurationManager.AppSettings["GameFolderPath"], @"Support64\SC2Switcher_x64.exe"));
-                                openInstanceButton.BeginInvoke(new Action(() =>
-                                {
-                                    openInstanceButton.Text = "一键多开";
-                                    openInstanceButton.Enabled = true;
-                                }));
-                            }
-                        });
+                                openInstanceButton.Text = "一键多开";
+                                openInstanceButton.Enabled = true;
+                            }));
+                            break;
+                        }
                     }
                     if (!ready)
                     {
