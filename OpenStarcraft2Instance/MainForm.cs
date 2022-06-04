@@ -42,7 +42,7 @@ namespace OpenStarcraft2Instance
             var scProcesses = Process.GetProcessesByName("SC2_x64");
             if (scProcesses.Length == 0)
             {
-                MessageBox.Show("未检测到星际2实例，请先打开一个星际2实例！", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                Process.Start(Path.Combine(ConfigurationManager.AppSettings["GameFolderPath"], @"Support64\SC2Switcher_x64.exe"));
             }
             else
             {
